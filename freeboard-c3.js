@@ -127,6 +127,8 @@
         var padding = {
             right: 0
         };
+        var flowBuffer = new Array();
+        var maxFlowBufferLength = 20;
 
         self.calculatePadding = function(type) {
             padding.right = 0;
@@ -204,8 +206,26 @@
 
         self.onCalculatedValueChanged = function(settingName, newValue) {
             if (settingName === "data") {
-                var fn = currentSettings.flow ? chart.flow : chart.load;
-                fn(newValue);
+                // c3 fails to pop old values while the page is not visible
+                // https://github.com/masayuki0812/c3/issues/1097
+                // check if the page is visible, if not, accumulate values
+                // but ensure we only store the last N values
+                // to avoid memory issues
+                if(currentSettings.flow) {
+                    if(document.hidden) {
+                        flowBuffer.push(newValue);
+                        while(flowBuffer.length > maxFlowBufferLength) {
+                            flowBuffer.shift();
+                        }
+                    } else {
+                        while(flowBuffer.length > 0) {
+                            chart.flow(flowBuffer.shift());
+                        }
+                        chart.flow(newValue);
+                    }
+                } else {
+                    chart.load(newValue);
+                }
             }
         }
 
