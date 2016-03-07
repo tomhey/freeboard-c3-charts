@@ -55,7 +55,7 @@
         }, {
             "name": "options",
             "display_name": "Chart Options",
-            "type": "text",
+            "type": "calculated",
             "description": "C3 options JSON used to configure the graph"
         }, {
             "name": "flow",
@@ -122,6 +122,7 @@
     var freeboardC3Widget = function(settings) {
         var self = this;
         var currentSettings = settings;
+        var currentOptions = null;
         var chart = null;
         var element = $('<div class="c3-chart-container"></div>');
         var padding = {
@@ -181,7 +182,6 @@
         self.render = function(containerElement) {
             $(containerElement).empty();
             $(containerElement).append(element);
-            self.createChart(currentSettings);
         }
 
         self.getHeight = function() {
@@ -191,21 +191,36 @@
         self.onSettingsChanged = function(newSettings) {
             self.calculatePadding(newSettings.type);
 
-            if (newSettings.type !== currentSettings.type) {
-                chart.transform(newSettings.type);
-            }
-
-            if(newSettings.options.toString() !== currentSettings.options.toString()) {
-                self.createChart(newSettings);
+            if(chart) {
+                // check if the options cleared
+                // empty "calculated" settings don't get sent to
+                // the onCalculatedValueChanged method
+                if (currentOptions && (newSettings.options === "")) {
+                    self.createChart(newSettings.options);
+                    currentOptions = null;
+                } else if (newSettings.type !== currentSettings.type) {
+                    chart.transform(newSettings.type);
+                }
             }
 
             currentSettings = newSettings;
         }
 
         self.onCalculatedValueChanged = function(settingName, newValue) {
-            if (settingName === "data") {
-                var fn = currentSettings.flow ? chart.flow : chart.load;
-                fn(newValue);
+            if(settingName === "options") {
+                // check if the options have changed by doing a JSON serialise
+                // and comparing the resulting output
+                if((!currentOptions) || (JSON.stringify(currentOptions) !== JSON.stringify(newValue))) {
+                    self.createChart(newValue);
+                    currentOptions = newValue;
+                }
+            }
+
+            if(chart) {
+                if (settingName === "data") {
+                    var fn = currentSettings.flow ? chart.flow : chart.load;
+                    fn(newValue);
+                }
             }
         }
 
