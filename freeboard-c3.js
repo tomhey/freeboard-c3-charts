@@ -138,15 +138,6 @@
             }
         }
 
-        self.objectStringToJson = function(str) {
-            // convert object notation
-            // {a: "b"}
-            // to json
-            // {"a": "b"}
-            // without using 'eval'
-            return str.replace(/(\{)\s*?([^"\s]+?)\s*?:/g, '$1 "$2":');
-        }
-
         self.calculatePadding(currentSettings.type);
 
         self.createChart = function(createSettings) {
@@ -163,14 +154,11 @@
                 }
             };
 
-            if(createSettings.options !== undefined && createSettings.options != "") {
+            if((createSettings.options !== undefined) && (createSettings.options !== "")) {
                 // handle bad options
                 // without this, we will end up with empty C3 widgets at creation time
                 try {
-                    var customOptions = createSettings.options;
-                    customOptions = self.objectStringToJson(customOptions);
-                    customOptions = JSON.parse(customOptions);
-                    $.extend(options, customOptions);
+                    $.extend(options, createSettings.options);
                 } catch(e) {
                     console.log(e);
                 }
@@ -196,7 +184,7 @@
                 // empty "calculated" settings don't get sent to
                 // the onCalculatedValueChanged method
                 if (currentOptions && (newSettings.options === "")) {
-                    self.createChart(newSettings.options);
+                    self.createChart(newSettings);
                     currentOptions = null;
                 } else if (newSettings.type !== currentSettings.type) {
                     chart.transform(newSettings.type);
@@ -211,7 +199,11 @@
                 // check if the options have changed by doing a JSON serialise
                 // and comparing the resulting output
                 if((!currentOptions) || (JSON.stringify(currentOptions) !== JSON.stringify(newValue))) {
-                    self.createChart(newValue);
+                    self.createChart({
+                        type: currentSettings.type,
+                        options: newValue,
+                        height: currentSettings.height
+                    });
                     currentOptions = newValue;
                 }
             }
