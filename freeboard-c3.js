@@ -205,6 +205,12 @@
                 }
             }
 
+            // check if flow changed
+            // clear the flow buffer if it did
+            if(currentSettings.flow != newSettings.flow) {
+                flowBuffer = new Array();
+            }
+
             currentSettings = newSettings;
         }
 
