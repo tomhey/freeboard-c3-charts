@@ -55,7 +55,7 @@
         }, {
             "name": "options",
             "display_name": "Chart Options",
-            "type": "text",
+            "type": "calculated",
             "description": "C3 options JSON used to configure the graph"
         }, {
             "name": "flow",
@@ -122,6 +122,7 @@
     var freeboardC3Widget = function(settings) {
         var self = this;
         var currentSettings = settings;
+        var currentOptions = null;
         var chart = null;
         var element = $('<div class="c3-chart-container"></div>');
         var padding = {
@@ -135,15 +136,6 @@
                 type !== "donut") {
                 padding.right = 8;
             }
-        }
-
-        self.objectStringToJson = function(str) {
-            // convert object notation
-            // {a: "b"}
-            // to json
-            // {"a": "b"}
-            // without using 'eval'
-            return str.replace(/(\{)\s*?([^"\s]+?)\s*?:/g, '$1 "$2":');
         }
 
         self.calculatePadding(currentSettings.type);
@@ -162,14 +154,11 @@
                 }
             };
 
-            if(createSettings.options !== undefined && createSettings.options != "") {
+            if((createSettings.options !== undefined) && (createSettings.options !== "")) {
                 // handle bad options
                 // without this, we will end up with empty C3 widgets at creation time
                 try {
-                    var customOptions = createSettings.options;
-                    customOptions = self.objectStringToJson(customOptions);
-                    customOptions = JSON.parse(customOptions);
-                    $.extend(options, customOptions);
+                    $.extend(options, createSettings.options);
                 } catch(e) {
                     console.log(e);
                 }
@@ -181,7 +170,6 @@
         self.render = function(containerElement) {
             $(containerElement).empty();
             $(containerElement).append(element);
-            self.createChart(currentSettings);
         }
 
         self.getHeight = function() {
@@ -191,21 +179,40 @@
         self.onSettingsChanged = function(newSettings) {
             self.calculatePadding(newSettings.type);
 
-            if (newSettings.type !== currentSettings.type) {
-                chart.transform(newSettings.type);
-            }
-
-            if(newSettings.options.toString() !== currentSettings.options.toString()) {
-                self.createChart(newSettings);
+            if(chart) {
+                // check if the options cleared
+                // empty "calculated" settings don't get sent to
+                // the onCalculatedValueChanged method
+                if (currentOptions && (newSettings.options === "")) {
+                    self.createChart(newSettings);
+                    currentOptions = null;
+                } else if (newSettings.type !== currentSettings.type) {
+                    chart.transform(newSettings.type);
+                }
             }
 
             currentSettings = newSettings;
         }
 
         self.onCalculatedValueChanged = function(settingName, newValue) {
-            if (settingName === "data") {
-                var fn = currentSettings.flow ? chart.flow : chart.load;
-                fn(newValue);
+            if(settingName === "options") {
+                // check if the options have changed by doing a JSON serialise
+                // and comparing the resulting output
+                if((!currentOptions) || (JSON.stringify(currentOptions) !== JSON.stringify(newValue))) {
+                    self.createChart({
+                        type: currentSettings.type,
+                        options: newValue,
+                        height: currentSettings.height
+                    });
+                    currentOptions = newValue;
+                }
+            }
+
+            if(chart) {
+                if (settingName === "data") {
+                    var fn = currentSettings.flow ? chart.flow : chart.load;
+                    fn(newValue);
+                }
             }
         }
 
