@@ -3,7 +3,6 @@
     freeboard.loadWidgetPlugin({
         "type_name": "C3",
         "display_name": "C3 Widget",
-        "description": "Very simple and basic wrapper around C3, which is a wrapper around D3 for each reusable graphs.",
         "external_scripts": [
             "https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.16/d3.min.js",
             "https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.10/c3.min.js"
@@ -63,6 +62,11 @@
             "type": "boolean",
             "default_value": false,
             "description": "Use c3.flow to append data rather than replacing all of the data"
+        }, {
+            "name": "script",
+            "display_name": "Data Script",
+            "type": "text",
+            "description": "Allows custom Javascript for C3 data loading. Over-rides the flow option."
         }, {
             "name": "height",
             "display_name": "Height Blocks",
@@ -202,6 +206,34 @@
             currentSettings = newSettings;
         }
 
+        self.flowData = function(data) {
+            if(currentSettings.script !== undefined) {
+                eval(currentSettings.script);
+            } else {
+                chart.flow(data);
+            }
+        }
+
+        self.loadData = function(data) {
+            if(currentSettings.script !== undefined) {
+                eval(currentSettings.script);
+            } else {
+                chart.load(newValue);
+            }
+        }
+
+        self.limitBuffer = function() {
+            while(flowBuffer.length > maxFlowBufferLength) {
+                flowBuffer.shift();
+            }
+        }
+
+        self.flowBuffer = function() {
+            while(flowBuffer.length > 0) {
+                this.flowData(flowBuffer.shift());
+            }
+        }
+
         self.onCalculatedValueChanged = function(settingName, newValue) {
             if(settingName === "options") {
                 // check if the options have changed by doing a JSON serialise
@@ -226,17 +258,13 @@
                     if(currentSettings.flow) {
                         if(document.hidden) {
                             flowBuffer.push(newValue);
-                            while(flowBuffer.length > maxFlowBufferLength) {
-                                flowBuffer.shift();
-                            }
+                            this.limitBuffer();
                         } else {
-                            while(flowBuffer.length > 0) {
-                                chart.flow(flowBuffer.shift());
-                            }
-                            chart.flow(newValue);
+                            this.flowBuffer();
+                            this.flowData(newValue);
                         }
                     } else {
-                        chart.load(newValue);
+                        this.loadData(newValue);
                     }
                 }
             }
