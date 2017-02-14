@@ -5,8 +5,8 @@
         "display_name": "C3 Widget",
         "description": "Very simple and basic wrapper around C3, which is a wrapper around D3 for each reusable graphs.",
         "external_scripts": [
-            "https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.16/d3.min.js",
-            "https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.10/c3.min.js"
+            "freeboard-c3-charts/d3.min.js",
+            "freeboard-c3-charts/c3.min.js"
         ],
         "fill_size": true,
         "settings": [{
@@ -58,18 +58,33 @@
             "type": "calculated",
             "description": "C3 options JSON used to configure the graph"
         }, {
+            "name": "options_plus",
+            "display_name": "Chart Options Plus",
+            "type"        : "array",
+            "description" : "Extra C3 options.See http://c3js.org/reference.html",
+            "settings"    : [
+                    {
+                        "display_name" : "C3 extra option",
+                        "name" : "Extra",
+                        "value" : "extra",
+                        "type" : "text"
+                    }
+                ]
+        }, {
             "name": "flow",
             "display_name": "Append Data",
             "type": "boolean",
             "default_value": false,
             "description": "Use c3.flow to append data rather than replacing all of the data"
         }, {
-            "name": "height",
-            "display_name": "Height Blocks",
-            "type": "number",
-            "default_value": 5,
-            "description": "A height block is around 60 pixels"
+             "name": "height",
+             "display_name": "Height Blocks",
+             "type": "number",
+             "default_value": 8,
+             "description": "A height block is around 60 pixels"
+
         }],
+
         newInstance: function(settings, newInstanceCallback) {
             newInstanceCallback(new freeboardC3Widget(settings));
         }
@@ -116,7 +131,7 @@
     freeboard.addStyle('.c3-chart-arc .c3-gauge-value', "fill: #000;");
 
     // freeboard customised styles
-    freeboard.addStyle('.c3 text', "fill: #d3d4d4");
+    freeboard.addStyle('.c3 text', "fill: #131414");
     freeboard.addStyle('.c3 path.domain, .c3 .tick line', "stroke: #d3d4d4;");
 
     var freeboardC3Widget = function(settings) {
@@ -148,9 +163,9 @@
                 bindto: d3.selectAll(element.toArray()),
                 data: {
                     type: createSettings.type,
+                    x : 'x',
                     columns: []
                 },
-                padding: padding,
                 size: {
                     height: createSettings.height * 60
                 }
@@ -160,12 +175,34 @@
                 // handle bad options
                 // without this, we will end up with empty C3 widgets at creation time
                 try {
-                    $.extend(options, createSettings.options);
+                    var customOptions = createSettings.options;
+                    customOptions = self.objectStringToJson(customOptions);
+                    customOptions = JSON.parse(customOptions);
+                    $.extend(options, customOptions);
+
                 } catch(e) {
-                    console.log(e);
+                    console.log(e + " " + customOptions);
+                }
+
+                   // Add extra options 
+                if (typeof currentSettings.options_plus !== 'undefined') {
+                    var optlen = currentSettings.options_plus.length;
+                    for (i = 0 ; i < optlen; i++) {
+
+                        if (currentSettings.options_plus[i]['Extra'] !== 'undefined') {
+                            try {
+                                var plusOptions = createSettings.options_plus[i]['Extra'];
+                                plusOptions = self.objectStringToJson(plusOptions);
+                                plusOptions = JSON.parse(plusOptions);
+                                $.extend(options, plusOptions);
+                            } catch(e) {
+                                console.log(e + " " + plusOptions);
+                            }
+                        }
+                    }
                 }
             }
-
+console.log(JSON.stringify(options));
             chart = c3.generate(options);
         }
 
