@@ -155,6 +155,15 @@
             }
         }
 
+        self.objectStringToJson = function(str) {
+            // convert object notation
+            // {a: "b"}
+            // to json
+            // {"a": "b"}
+            // without using 'eval'
+            return str.replace(/(\{)\s*?([^"\s]+?)\s*?:/g, '$1 "$2":');
+        }
+
         self.calculatePadding(currentSettings.type);
 
         self.createChart = function(createSettings) {
@@ -209,6 +218,7 @@ console.log(JSON.stringify(options));
         self.render = function(containerElement) {
             $(containerElement).empty();
             $(containerElement).append(element);
+            self.createChart(currentSettings);
         }
 
         self.getHeight = function() {
