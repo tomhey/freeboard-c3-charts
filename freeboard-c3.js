@@ -55,7 +55,7 @@
         }, {
             "name": "options",
             "display_name": "Chart Options",
-            "type": "text",
+            "type": "calculated",
             "description": "C3 options JSON used to configure the graph"
         }, {
             "name": "options_plus",
