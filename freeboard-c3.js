@@ -185,8 +185,6 @@
                 // without this, we will end up with empty C3 widgets at creation time
                 try {
                     var customOptions = createSettings.options;
-                    customOptions = self.objectStringToJson(customOptions);
-                    customOptions = JSON.parse(customOptions);
                     $.extend(options, customOptions);
 
                 } catch(e) {
@@ -201,8 +199,6 @@
                         if (currentSettings.options_plus[i]['Extra'] !== 'undefined') {
                             try {
                                 var plusOptions = createSettings.options_plus[i]['Extra'];
-                                plusOptions = self.objectStringToJson(plusOptions);
-                                plusOptions = JSON.parse(plusOptions);
                                 $.extend(options, plusOptions);
                             } catch(e) {
                                 console.log(e + " " + plusOptions);
