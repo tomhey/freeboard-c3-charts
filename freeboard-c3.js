@@ -207,7 +207,6 @@
                     }
                 }
             }
-console.log(JSON.stringify(options));
             chart = c3.generate(options);
         }
 
