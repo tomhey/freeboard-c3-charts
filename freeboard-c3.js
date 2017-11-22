@@ -183,6 +183,7 @@
             if((createSettings.options !== undefined) && (createSettings.options !== "")) {
                 // handle bad options
                 // without this, we will end up with empty C3 widgets at creation time
+                console.log( createSettings.options );
                 try {
                     var customOptions = createSettings.options;
                     $.extend(options, customOptions);
@@ -207,6 +208,7 @@
                     }
                 }
             }
+            currentOptions = options;
             chart = c3.generate(options);
         }
 
@@ -248,13 +250,23 @@
             if(settingName === "options") {
                 // check if the options have changed by doing a JSON serialise
                 // and comparing the resulting output
-                if((!currentOptions) || (JSON.stringify(currentOptions) !== JSON.stringify(newValue))) {
+                if(!currentOptions) {
                     self.createChart({
                         type: currentSettings.type,
                         options: newValue,
                         height: currentSettings.height
                     });
                     currentOptions = newValue;
+                } else {
+                    var combined = {};
+                    $.extend(combined, currentOptions, newValue);
+                    if (JSON.stringify(currentOptions) !== JSON.stringify(combined)) {
+                       self.createChart({
+                           type: currentSettings.type,
+                           options: combined,
+                           height: currentSettings.height
+                       });
+                    }
                 }
             }
 
@@ -278,7 +290,9 @@
                             chart.flow(newValue);
                         }
                     } else {
-                        chart.load(newValue);
+                        setTimeout(function () { 
+                            chart.load(newValue);
+                        }, 300);
                     }
                 }
             }
